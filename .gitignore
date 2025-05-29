@@ -1,0 +1,22 @@
+# nix / flakes
+/result
+/result-*
+/.nix-gc*
+
+# devenv + direnv
+/.devenv
+/.direnv
+.envrc
+
+# Shell/editor temp files
+*~
+*.swp
+*.swo
+.DS_Store
+
+# Logs and output
+*.log
+
+# VSCode, JetBrains, etc.
+.vscode/
+.idea/
