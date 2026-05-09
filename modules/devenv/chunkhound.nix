@@ -48,8 +48,9 @@ let
   ];
 
   # Isolated chunkhound paths
-  chunkhoundVenv = "$DEVENV_STATE/chunkhound-venv";
-  chunkhoundConfig = "$DEVENV_STATE/chunkhound.json";
+  chunkhoundDir = "$DEVENV_STATE/chunkhound";
+  chunkhoundVenv = "${chunkhoundDir}/venv";
+  chunkhoundConfig = "${chunkhoundDir}/config.json";
 
   # Base config from devenv options
   baseConfigJson = builtins.toJSON {
@@ -114,6 +115,9 @@ in
     };
 
     enterShell = ''
+      # Ensure chunkhound state directory exists
+      mkdir -p "${chunkhoundDir}"
+
       # Install chunkhound to isolated venv (separate from project Python)
       if [ ! -x "${chunkhoundVenv}/bin/chunkhound" ]; then
         echo "Installing chunkhound to isolated environment..."
@@ -124,7 +128,7 @@ in
       # Generate config in devenv state: merge defaults with .chunkhound.json overrides
       # Database path must be set at runtime since $DEVENV_STATE isn't available at Nix eval time
       _base_config='${baseConfigJson}'
-      _db_path="{\"database\": {\"path\": \"$DEVENV_STATE/chunkhound-db\"}}"
+      _db_path="{\"database\": {\"path\": \"${chunkhoundDir}/db\"}}"
       if [ -f "$DEVENV_ROOT/.chunkhound.json" ]; then
         echo "$_base_config" | ${pkgs.jq}/bin/jq -s '.[0] * .[1] * .[2]' - <(echo "$_db_path") "$DEVENV_ROOT/.chunkhound.json" > "${chunkhoundConfig}"
       else
@@ -145,7 +149,7 @@ in
 
     scripts.chunkhound.exec = ''
       if [ $# -eq 0 ]; then
-        "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" --help
+        "$DEVENV_STATE/chunkhound/venv/bin/chunkhound" --help
         exit 0
       fi
 
@@ -170,7 +174,7 @@ in
           ;;
       esac
 
-      "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound.json" "$@"
+      "$DEVENV_STATE/chunkhound/venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound/config.json" "$@"
     '';
 
     scripts.chunkhound-setup.exec = ''
