@@ -142,9 +142,13 @@ in
     '';
 
     scripts.chunkhound.exec = ''
-      cmd="$1"
-      shift
-      "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound.json" "$@"
+      if [ $# -eq 0 ]; then
+        "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" --help
+      else
+        cmd="$1"
+        shift
+        "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound.json" "$@"
+      fi
     '';
 
     scripts.chunkhound-setup.exec = ''
