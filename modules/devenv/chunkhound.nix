@@ -122,11 +122,13 @@ in
       fi
 
       # Generate config in devenv state: merge defaults with .chunkhound.json overrides
+      # Database path must be set at runtime since $DEVENV_STATE isn't available at Nix eval time
       _base_config='${baseConfigJson}'
+      _db_path="{\"database\": {\"path\": \"$DEVENV_STATE/chunkhound-db\"}}"
       if [ -f "$DEVENV_ROOT/.chunkhound.json" ]; then
-        echo "$_base_config" | ${pkgs.jq}/bin/jq -s '.[0] * .[1]' - "$DEVENV_ROOT/.chunkhound.json" > "${chunkhoundConfig}"
+        echo "$_base_config" | ${pkgs.jq}/bin/jq -s '.[0] * .[1] * .[2]' - <(echo "$_db_path") "$DEVENV_ROOT/.chunkhound.json" > "${chunkhoundConfig}"
       else
-        echo "$_base_config" | ${pkgs.jq}/bin/jq . > "${chunkhoundConfig}"
+        echo "$_base_config" | ${pkgs.jq}/bin/jq -s '.[0] * .[1]' - <(echo "$_db_path") > "${chunkhoundConfig}"
       fi
 
       # Check ollama is running
