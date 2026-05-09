@@ -144,11 +144,31 @@ in
     scripts.chunkhound.exec = ''
       if [ $# -eq 0 ]; then
         "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" --help
-      else
-        cmd="$1"
-        shift
-        "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound.json" "$@"
+        exit 0
       fi
+
+      cmd="$1"
+      shift
+
+      # For commands that need DB access, check if daemon holds the lock
+      case "$cmd" in
+        index|search|research|calibrate)
+          daemon_pid=$(pgrep -f "chunkhound.*_daemon" 2>/dev/null | head -1)
+          if [ -n "$daemon_pid" ]; then
+            echo "ChunkHound daemon is running (PID $daemon_pid) and holds the database lock."
+            echo ""
+            echo "This usually means Claude Code (or another MCP client) is open."
+            echo ""
+            echo "Options:"
+            echo "  1. Close Claude Code / MCP clients to release the lock"
+            echo "  2. Use chunkhound tools via Claude Code instead (the daemon handles indexing)"
+            echo ""
+            exit 1
+          fi
+          ;;
+      esac
+
+      "$DEVENV_STATE/chunkhound-venv/bin/chunkhound" "$cmd" --config "$DEVENV_STATE/chunkhound.json" "$@"
     '';
 
     scripts.chunkhound-setup.exec = ''
