@@ -141,7 +141,7 @@ in
         echo "⚠️  Ollama is not running. ChunkHound code search will not work effectively."
         echo "   Start Ollama with: ollama serve (or: devenv up)"
       # Check for embedding model (only if ollama is running)
-      elif ! ${pkgs.ollama}/bin/ollama list 2>/dev/null | grep -q "${cfg.embedding.model}"; then
+      elif ! ollama list 2>/dev/null | grep -q "${cfg.embedding.model}"; then
         echo ""
         echo "⚠️  ${cfg.embedding.model} model not found. Run: chunkhound-setup"
       fi
@@ -179,7 +179,7 @@ in
 
     scripts.chunkhound-setup.exec = ''
       echo "Pulling ${cfg.embedding.model} model..."
-      ${pkgs.ollama}/bin/ollama pull ${cfg.embedding.model}
+      ollama pull ${cfg.embedding.model}
       echo "✓ Setup complete"
     '';
   };
