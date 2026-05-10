@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VERSION_FILE="$REPO_ROOT/VERSION"
+CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") <major|minor|patch> [--dry-run]
+
+Bump version, generate changelog, tag, and push.
+
+Examples:
+  $(basename "$0") patch        # 0.1.0 -> 0.1.1
+  $(basename "$0") minor        # 0.1.0 -> 0.2.0
+  $(basename "$0") major        # 0.1.0 -> 1.0.0
+  $(basename "$0") patch --dry-run
+EOF
+  exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+
+BUMP_TYPE="$1"
+DRY_RUN=false
+[[ "${2:-}" == "--dry-run" ]] && DRY_RUN=true
+
+[[ ! "$BUMP_TYPE" =~ ^(major|minor|patch)$ ]] && usage
+
+cd "$REPO_ROOT"
+
+# Ensure clean working tree
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Error: Working tree is not clean. Commit or stash changes first."
+  exit 1
+fi
+
+# Ensure on main branch
+BRANCH="$(git branch --show-current)"
+if [[ "$BRANCH" != "main" ]]; then
+  echo "Error: Must be on main branch (currently on $BRANCH)"
+  exit 1
+fi
+
+# Read current version
+CURRENT_VERSION="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+# Bump version
+case "$BUMP_TYPE" in
+  major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+  minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+  patch) PATCH=$((PATCH + 1)) ;;
+esac
+NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+
+echo "Version: $CURRENT_VERSION -> $NEW_VERSION"
+
+# Get last tag or first commit
+LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+
+# Generate changelog entry from conventional commits
+CHANGELOG_ENTRY="## v$NEW_VERSION ($(date +%Y-%m-%d))"$'\n\n'
+
+# Group commits by type
+FEATURES="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^feat(\(.+\))?:' | sed 's/^feat\(([^)]*)\)\?:\s*/- /' || true)"
+FIXES="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^fix(\(.+\))?:' | sed 's/^fix\(([^)]*)\)\?:\s*/- /' || true)"
+REFACTORS="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^refactor(\(.+\))?:' | sed 's/^refactor\(([^)]*)\)\?:\s*/- /' || true)"
+OTHER="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -vE '^(feat|fix|refactor|chore|docs|test|ci)(\(.+\))?:' || true)"
+
+[[ -n "$FEATURES" ]] && CHANGELOG_ENTRY+="### Features"$'\n'"$FEATURES"$'\n\n'
+[[ -n "$FIXES" ]] && CHANGELOG_ENTRY+="### Fixes"$'\n'"$FIXES"$'\n\n'
+[[ -n "$REFACTORS" ]] && CHANGELOG_ENTRY+="### Refactoring"$'\n'"$REFACTORS"$'\n\n'
+[[ -n "$OTHER" ]] && CHANGELOG_ENTRY+="### Other"$'\n'"$(echo "$OTHER" | sed 's/^/- /')"$'\n\n'
+
+echo ""
+echo "Changelog entry:"
+echo "----------------"
+echo "$CHANGELOG_ENTRY"
+
+if $DRY_RUN; then
+  echo "[dry-run] Would update VERSION to $NEW_VERSION"
+  echo "[dry-run] Would prepend changelog entry"
+  echo "[dry-run] Would commit and tag v$NEW_VERSION"
+  echo "[dry-run] Would push to origin"
+  exit 0
+fi
+
+# Update VERSION file
+echo "$NEW_VERSION" > "$VERSION_FILE"
+
+# Update or create CHANGELOG.md
+if [[ -f "$CHANGELOG_FILE" ]]; then
+  # Prepend new entry after header
+  if head -1 "$CHANGELOG_FILE" | grep -q "^# "; then
+    HEADER="$(head -1 "$CHANGELOG_FILE")"
+    EXISTING="$(tail -n +2 "$CHANGELOG_FILE")"
+    echo "$HEADER"$'\n\n'"$CHANGELOG_ENTRY""$EXISTING" > "$CHANGELOG_FILE"
+  else
+    echo "$CHANGELOG_ENTRY$(cat "$CHANGELOG_FILE")" > "$CHANGELOG_FILE"
+  fi
+else
+  echo "# Changelog"$'\n\n'"$CHANGELOG_ENTRY" > "$CHANGELOG_FILE"
+fi
+
+# Commit and tag
+git add "$VERSION_FILE" "$CHANGELOG_FILE"
+git commit -m "chore: release v$NEW_VERSION"
+git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+
+# Push
+git push origin main
+git push origin "v$NEW_VERSION"
+
+echo ""
+echo "Released v$NEW_VERSION"
+echo "  Tag: https://github.com/itsthatguy/nix-shared/releases/tag/v$NEW_VERSION"
