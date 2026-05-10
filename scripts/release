@@ -84,6 +84,7 @@ if $DRY_RUN; then
   echo "[dry-run] Would prepend changelog entry"
   echo "[dry-run] Would commit and tag v$NEW_VERSION"
   echo "[dry-run] Would push to origin"
+  echo "[dry-run] Would create GitHub release with changelog"
   exit 0
 fi
 
@@ -113,6 +114,16 @@ git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
 git push origin main
 git push origin "v$NEW_VERSION"
 
-echo ""
-echo "Released v$NEW_VERSION"
-echo "  Tag: https://github.com/itsthatguy/nix-shared/releases/tag/v$NEW_VERSION"
+# Create GitHub release with changelog as description
+RELEASE_NOTES="$CHANGELOG_ENTRY"
+if command -v gh &> /dev/null; then
+  gh release create "v$NEW_VERSION" --title "v$NEW_VERSION" --notes "$RELEASE_NOTES"
+  echo ""
+  echo "Released v$NEW_VERSION"
+  echo "  https://github.com/itsthatguy/nix-shared/releases/tag/v$NEW_VERSION"
+else
+  echo ""
+  echo "Released v$NEW_VERSION"
+  echo "  Tag pushed. Create release manually or install gh CLI for automatic releases."
+  echo "  https://github.com/itsthatguy/nix-shared/releases/tag/v$NEW_VERSION"
+fi
