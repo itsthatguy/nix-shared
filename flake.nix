@@ -1,7 +1,7 @@
 {
   description = "Shared overlays and devenv modules";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:cachix/devenv-nixpkgs/rolling";
 
   outputs = { self, nixpkgs }: {
     overlays = rec {
