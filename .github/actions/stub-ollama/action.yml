@@ -1,0 +1,11 @@
+name: Stub Ollama CLI
+description: Adds fake ollama and pgrep to PATH for CI testing without running real ollama
+
+runs:
+  using: composite
+  steps:
+    - name: Add stubs to PATH
+      shell: bash
+      run: |
+        chmod +x "${{ github.action_path }}/ollama" "${{ github.action_path }}/pgrep"
+        echo "${{ github.action_path }}" >> $GITHUB_PATH
