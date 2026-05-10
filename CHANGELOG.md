@@ -1,0 +1,26 @@
+# Changelog
+
+## v1.0.0 (2026-05-10)
+
+### Features
+feat: add release script with semantic versioning and changelog generation
+feat(devenv): add grepika code search module
+
+### Fixes
+fix(flake): compose overlays.default as a function
+fix(chunkhound): use PATH ollama instead of pkgs.ollama in scripts
+fix(chunkhound): set database path at runtime instead of nix eval time
+
+### Refactoring
+refactor(chunkhound): consolidate state files into dedicated subdirectory
+
+### Other
+- Merge pull request #2 from itsthatguy/feat/release-script
+- Merge pull request #1 from kevrom/fix/chunkhound-ollama-unconditional-ref
+- add friendly error when chunkhound daemon holds db lock
+- fix chunkhound script to show help when no args passed
+- add chunkhound devenv module
+- update readme
+- initial overlay code
+
+
