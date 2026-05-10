@@ -8,7 +8,7 @@
       kubectx = import ./overlays/kubectx.nix;
       kubens = import ./overlays/kubens.nix;
       fzfWrapper = import ./overlays/fzf-wrapper.nix;
-      default = [ kubectx kubens fzfWrapper ];
+      default = nixpkgs.lib.composeManyExtensions [ kubectx kubens fzfWrapper ];
     };
 
     devenvModules = {
