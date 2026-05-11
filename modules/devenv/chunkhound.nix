@@ -15,9 +15,15 @@
 #     # Optional overrides:
 #     # chunkhound.embedding.model = "nomic-embed-text";
 #     # chunkhound.embedding.baseUrl = "http://localhost:11434/v1";
-#     # chunkhound.ollama.enable = false;
+#     # chunkhound.ollama.enable = true;  # install ollama via Nix (default: false)
 #     # chunkhound.extraExcludePatterns = [ "**/vendor/**" ];
 #   }
+#
+# Ollama: By default, expects ollama installed externally:
+#   - macOS: Install Ollama.app from https://ollama.com
+#   - Linux/NixOS: Enable services.ollama in system config (handles CUDA)
+#   - Models are stored system-wide in ~/.ollama/models
+#   Set chunkhound.ollama.enable = true to install via Nix instead.
 #
 # Provides:
 #   - chunkhound command (wraps chunkhound with config)
@@ -100,15 +106,15 @@ in
 
     ollama.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = false;
+      description = "Install ollama via Nix. Set to false (default) to use externally installed ollama.";
     };
   };
 
   config = lib.mkIf cfg.enable {
     packages = [
       pkgs.jq
-    ]
-    ++ lib.optionals cfg.ollama.enable [ pkgs.ollama ];
+    ] ++ lib.optionals cfg.ollama.enable [ pkgs.ollama ];
 
     processes = lib.mkIf cfg.ollama.enable {
       ollama.exec = "pgrep -x ollama > /dev/null && { echo 'ollama already running'; sleep infinity; } || ollama serve";
@@ -135,11 +141,19 @@ in
         echo "$_base_config" | ${pkgs.jq}/bin/jq -s '.[0] * .[1]' - <(echo "$_db_path") > "${chunkhoundConfig}"
       fi
 
-      # Check ollama is running
-      if ! pgrep -x ollama > /dev/null; then
+      # Check ollama availability
+      if ! command -v ollama &> /dev/null; then
+        echo ""
+        echo "⚠️  Ollama is not installed. ChunkHound code search requires it."
+        ${if cfg.ollama.enable then ''
+        echo "   Run: devenv up (ollama.enable is true)"
+        '' else ''
+        echo "   Install from https://ollama.com or set chunkhound.ollama.enable = true"
+        ''}
+      elif ! pgrep -x ollama > /dev/null; then
         echo ""
         echo "⚠️  Ollama is not running. ChunkHound code search will not work effectively."
-        echo "   Start Ollama with: ollama serve (or: devenv up)"
+        echo "   Start with: ollama serve${if cfg.ollama.enable then " (or: devenv up)" else ""}"
       # Check for embedding model (only if ollama is running)
       elif ! ollama list 2>/dev/null | grep -q "${cfg.embedding.model}"; then
         echo ""
