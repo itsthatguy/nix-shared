@@ -1,0 +1,114 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Version bump type
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  prepare:
+    name: prepare release (${{ inputs.bump_type }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Calculate new version
+        id: version
+        run: |
+          CURRENT_VERSION="$(cat VERSION | tr -d '[:space:]')"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          case "${{ inputs.bump_type }}" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog entry
+        id: changelog
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new }}"
+          LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)"
+
+          ENTRY="## v$NEW_VERSION ($(date +%Y-%m-%d))"$'\n\n'
+
+          FEATURES="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^feat(\(.+\))?:' | sed 's/^feat\(([^)]*)\)\?:\s*/- /' || true)"
+          FIXES="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^fix(\(.+\))?:' | sed 's/^fix\(([^)]*)\)\?:\s*/- /' || true)"
+          REFACTORS="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -E '^refactor(\(.+\))?:' | sed 's/^refactor\(([^)]*)\)\?:\s*/- /' || true)"
+          OTHER="$(git log "$LAST_TAG"..HEAD --pretty=format:'%s' | grep -vE '^(feat|fix|refactor|chore|docs|test|ci)(\(.+\))?:' || true)"
+
+          [[ -n "$FEATURES" ]] && ENTRY+="### Features"$'\n'"$FEATURES"$'\n\n'
+          [[ -n "$FIXES" ]] && ENTRY+="### Fixes"$'\n'"$FIXES"$'\n\n'
+          [[ -n "$REFACTORS" ]] && ENTRY+="### Refactoring"$'\n'"$REFACTORS"$'\n\n'
+          [[ -n "$OTHER" ]] && ENTRY+="### Other"$'\n'"$(echo "$OTHER" | sed 's/^/- /')"$'\n\n'
+
+          {
+            echo "entry<<EOF"
+            echo "$ENTRY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create release branch
+        run: git checkout -b "release/v${{ steps.version.outputs.new }}"
+
+      - name: Update VERSION file
+        run: echo "${{ steps.version.outputs.new }}" > VERSION
+
+      - name: Update CHANGELOG.md
+        run: |
+          if [[ -f CHANGELOG.md ]]; then
+            if head -1 CHANGELOG.md | grep -q "^# "; then
+              HEADER="$(head -1 CHANGELOG.md)"
+              EXISTING="$(tail -n +2 CHANGELOG.md)"
+              echo "$HEADER"$'\n\n'"${{ steps.changelog.outputs.entry }}""$EXISTING" > CHANGELOG.md
+            else
+              echo "${{ steps.changelog.outputs.entry }}$(cat CHANGELOG.md)" > CHANGELOG.md
+            fi
+          else
+            echo "# Changelog"$'\n\n'"${{ steps.changelog.outputs.entry }}" > CHANGELOG.md
+          fi
+
+      - name: Commit changes
+        run: |
+          git add VERSION CHANGELOG.md
+          git commit -m "chore: release v${{ steps.version.outputs.new }}"
+
+      - name: Push branch
+        run: git push origin "release/v${{ steps.version.outputs.new }}"
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "chore: release v${{ steps.version.outputs.new }}" \
+            --body "$(cat <<'EOF'
+          ## Release v${{ steps.version.outputs.new }}
+
+          ${{ steps.changelog.outputs.entry }}
+
+          ---
+          Merging this PR will automatically create the git tag and GitHub release.
+          EOF
+          )"
