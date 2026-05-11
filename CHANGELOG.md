@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.1 (2026-05-11)
+
+### Features
+- default to externally installed ollama
+- create GitHub release with changelog via gh CLI
+
+### Refactoring
+- split into PR-based prepare and publish workflows
+
+### Other
+- revert: restore simple release workflow
+
+
 ## v1.0.0 (2026-05-10)
 
 ### Features
@@ -22,5 +35,3 @@ refactor(chunkhound): consolidate state files into dedicated subdirectory
 - add chunkhound devenv module
 - update readme
 - initial overlay code
-
-
