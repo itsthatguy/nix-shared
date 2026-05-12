@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.2 (2026-05-12)
+
+### Fixes
+- scope LD_LIBRARY_PATH to chunkhound wrapper only
+- add native deps for Linux ML dependencies
+
+
 ## v2.0.1 (2026-05-12)
 
 ### Features
