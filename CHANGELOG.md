@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.0.0 (2026-05-12)
+
+### Features
+- add devenv module for claude-assisted git workflows
+
+### Other
+- refactor!: namespace module options under nix-shared and reorganize templates
+
+
 ## v1.0.1 (2026-05-11)
 
 ### Features
