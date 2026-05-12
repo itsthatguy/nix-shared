@@ -114,13 +114,23 @@ in
   config = lib.mkIf cfg.enable {
     packages = [
       pkgs.jq
-    ] ++ lib.optionals cfg.ollama.enable [ pkgs.ollama ];
+    ] ++ lib.optionals cfg.ollama.enable [ pkgs.ollama ]
+      ++ lib.optionals pkgs.stdenv.isLinux [
+        pkgs.stdenv.cc.cc.lib
+        pkgs.zlib
+        pkgs.pkg-config
+      ];
 
     processes = lib.mkIf cfg.ollama.enable {
       ollama.exec = "pgrep -x ollama > /dev/null && { echo 'ollama already running'; sleep infinity; } || ollama serve";
     };
 
     enterShell = ''
+      ${lib.optionalString pkgs.stdenv.isLinux ''
+        # Native libs for Python ML dependencies (numpy, etc.)
+        export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      ''}
+
       # Ensure chunkhound state directory exists
       mkdir -p "${chunkhoundDir}"
 
