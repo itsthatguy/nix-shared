@@ -1,4 +1,4 @@
 { pkgs, lib, config, inputs, ... }:
 {
-  chunkhound.enable = true;
+  nix-shared.chunkhound.enable = true;
 }

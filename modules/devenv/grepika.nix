@@ -10,10 +10,10 @@
 #
 # Usage in devenv.nix:
 #   {
-#     grepika.enable = true;
+#     nix-shared.grepika.enable = true;
 #
 #     # Optional overrides:
-#     # grepika.root = ".";  # defaults to $DEVENV_ROOT
+#     # nix-shared.grepika.root = ".";  # defaults to $DEVENV_ROOT
 #   }
 #
 # Provides:
@@ -27,12 +27,12 @@
 }:
 
 let
-  cfg = config.grepika;
+  cfg = config.nix-shared.grepika;
 
   grepikaDb = "$DEVENV_STATE/grepika.db";
 in
 {
-  options.grepika = {
+  options.nix-shared.grepika = {
     enable = lib.mkEnableOption "Grepika code search";
 
     root = lib.mkOption {

@@ -12,8 +12,10 @@
     };
 
     devenvModules = {
+      default = ./modules/devenv;
       chunkhound = ./modules/devenv/chunkhound.nix;
       claude-git = ./modules/devenv/claude-git.nix;
+      grepika = ./modules/devenv/grepika.nix;
     };
   };
 }
