@@ -138,7 +138,7 @@ in
     scripts.nix-shared-update-skills.exec = ''
       SKILLS_SRC="${skillsSrc}" \
       SKILLS_DEST="$DEVENV_ROOT/.claude/skills/nix-shared" \
-      ${pkgs.python3}/bin/python3 ${../..}/scripts/update-skills.py
+      ${pkgs.python3}/bin/python3 ${../..}/scripts/update_skills.py
     '';
 
     enterShell = ''
