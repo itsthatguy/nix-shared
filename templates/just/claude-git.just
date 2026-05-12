@@ -1,6 +1,6 @@
 # Claude Git helpers
 # Import this in your project's justfile with:
-#   import "path/to/claude-git.just"
+#   import? ".devenv/state/nix-shared/just/claude-git.just"
 
 # Claude-assisted git commit
 commit *ARGS:

@@ -10,20 +10,20 @@
 #
 # Usage in devenv.nix:
 #   {
-#     chunkhound.enable = true;
+#     nix-shared.chunkhound.enable = true;
 #
 #     # Optional overrides:
-#     # chunkhound.embedding.model = "nomic-embed-text";
-#     # chunkhound.embedding.baseUrl = "http://localhost:11434/v1";
-#     # chunkhound.ollama.enable = true;  # install ollama via Nix (default: false)
-#     # chunkhound.extraExcludePatterns = [ "**/vendor/**" ];
+#     # nix-shared.chunkhound.embedding.model = "nomic-embed-text";
+#     # nix-shared.chunkhound.embedding.baseUrl = "http://localhost:11434/v1";
+#     # nix-shared.chunkhound.ollama.enable = true;  # install ollama via Nix (default: false)
+#     # nix-shared.chunkhound.extraExcludePatterns = [ "**/vendor/**" ];
 #   }
 #
 # Ollama: By default, expects ollama installed externally:
 #   - macOS: Install Ollama.app from https://ollama.com
 #   - Linux/NixOS: Enable services.ollama in system config (handles CUDA)
 #   - Models are stored system-wide in ~/.ollama/models
-#   Set chunkhound.ollama.enable = true to install via Nix instead.
+#   Set nix-shared.chunkhound.ollama.enable = true to install via Nix instead.
 #
 # Provides:
 #   - chunkhound command (wraps chunkhound with config)
@@ -38,7 +38,7 @@
 }:
 
 let
-  cfg = config.chunkhound;
+  cfg = config.nix-shared.chunkhound;
 
   defaultExcludes = [
     "**/node_modules/**"
@@ -71,7 +71,7 @@ let
   };
 in
 {
-  options.chunkhound = {
+  options.nix-shared.chunkhound = {
     enable = lib.mkEnableOption "ChunkHound code search";
 
     embedding = {

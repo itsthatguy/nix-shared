@@ -1,4 +1,4 @@
 { pkgs, lib, config, inputs, ... }:
 {
-  grepika.enable = true;
+  nix-shared.grepika.enable = true;
 }

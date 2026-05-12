@@ -10,7 +10,7 @@
 #
 # Usage in devenv.nix:
 #   {
-#     claude-git.enable = true;
+#     nix-shared.claude-git.enable = true;
 #   }
 #
 # Provides:
@@ -31,7 +31,7 @@
 }:
 
 let
-  cfg = config.claude-git;
+  cfg = config.nix-shared.claude-git;
 
   rawOutput = "You are a raw text generator. Output ONLY the content specified by the skill template. Do not add any text before or after. No introductions, no summaries, no questions, no commentary.";
 
@@ -114,9 +114,14 @@ let
         ;;
     esac
   '';
+  # Paths for template copying
+  templateDir = "${../..}/templates";
+  justfileSrc = "${templateDir}/just/claude-git.just";
+  justfileDest = "$DEVENV_STATE/nix-shared/just/claude-git.just";
+  skillsSrc = "${templateDir}/skills";
 in
 {
-  options.claude-git = {
+  options.nix-shared.claude-git = {
     enable = lib.mkEnableOption "Claude Git helpers";
   };
 
@@ -130,19 +135,28 @@ in
       cpr-simple
     ];
 
-    # Expose justfile template for inclusion
-    # Import in your justfile with: import? "../.devenv/state/nix-shared/just/claude-git.just"
-    env.CLAUDE_GIT_JUSTFILE = "${../..}/just/claude-git.just";
+    scripts.nix-shared-update-skills.exec = ''
+      SKILLS_SRC="${skillsSrc}" \
+      SKILLS_DEST="$DEVENV_ROOT/.claude/skills/nix-shared" \
+      ${pkgs.python3}/bin/python3 ${../..}/scripts/update-skills.py
+    '';
 
     enterShell = ''
-      # Ensure skills are available (copy to project if not present)
-      _claude_skills_src="${../..}/.claude/skills"
-      if [ -d "$_claude_skills_src" ] && [ -d "$DEVENV_ROOT/.claude" ]; then
-        for skill in commit pr simple-pr; do
-          if [ ! -f "$DEVENV_ROOT/.claude/skills/$skill/SKILL.md" ] && [ -f "$_claude_skills_src/$skill/SKILL.md" ]; then
-            mkdir -p "$DEVENV_ROOT/.claude/skills/$skill"
-            cp "$_claude_skills_src/$skill/SKILL.md" "$DEVENV_ROOT/.claude/skills/$skill/"
-          fi
+      # Copy justfile to devenv state
+      # Import in your justfile with: import? ".devenv/state/nix-shared/just/claude-git.just"
+      mkdir -p "$DEVENV_STATE/nix-shared/just"
+      cp -f "${justfileSrc}" "${justfileDest}"
+
+      # Copy skills to project (if project has .claude dir)
+      _skills_src="${skillsSrc}"
+      _skills_dest="$DEVENV_ROOT/.claude/skills/nix-shared"
+
+      if [ -d "$_skills_src" ] && [ -d "$DEVENV_ROOT/.claude" ]; then
+        for skill_file in "$_skills_src"/*/SKILL.md; do
+          [ -f "$skill_file" ] || continue
+          skill=$(basename "$(dirname "$skill_file")")
+          mkdir -p "$_skills_dest/$skill"
+          cp -n "$skill_file" "$_skills_dest/$skill/"
         done
       fi
 
