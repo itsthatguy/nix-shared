@@ -34,3 +34,7 @@ devenv.local.yaml
 
 # Generated skills (source is in templates/skills/)
 .claude/skills/nix-shared/
+
+# Python
+__pycache__/
+*.pyc
