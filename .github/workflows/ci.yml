@@ -63,4 +63,4 @@ jobs:
       - uses: ./.github/actions/stub-ollama
 
       - name: Run integration test
-        run: cd tests/${{ matrix.test }} && devenv build
+        run: cd tests/${{ matrix.test }} && devenv test
