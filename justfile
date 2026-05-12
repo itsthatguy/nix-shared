@@ -1,4 +1,4 @@
-import? "./just/claude-git.just"
+import? "./templates/just/claude-git.just"
 
 default:
     @just --list
