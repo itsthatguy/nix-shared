@@ -126,11 +126,6 @@ in
     };
 
     enterShell = ''
-      ${lib.optionalString pkgs.stdenv.isLinux ''
-        # Native libs for Python ML dependencies (numpy, etc.)
-        export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-      ''}
-
       # Ensure chunkhound state directory exists
       mkdir -p "${chunkhoundDir}"
 
@@ -172,6 +167,12 @@ in
     '';
 
     scripts.chunkhound.exec = ''
+      ${lib.optionalString pkgs.stdenv.isLinux ''
+        # DuckDB/numpy wheels need libstdc++ - set only for chunkhound, not globally
+        # (global LD_LIBRARY_PATH breaks system binaries like VS Code and ollama)
+        export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.zlib}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      ''}
+
       if [ $# -eq 0 ]; then
         "$DEVENV_STATE/chunkhound/venv/bin/chunkhound" --help
         exit 0
