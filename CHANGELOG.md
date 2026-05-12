@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.1 (2026-05-12)
+
+### Features
+- add Git group to claude-git recipes
+
+
 ## v2.0.0 (2026-05-12)
 
 ### Features
