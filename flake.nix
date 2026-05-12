@@ -13,6 +13,7 @@
 
     devenvModules = {
       chunkhound = ./modules/devenv/chunkhound.nix;
+      claude-git = ./modules/devenv/claude-git.nix;
     };
   };
 }
