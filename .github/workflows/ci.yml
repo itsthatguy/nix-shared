@@ -35,12 +35,14 @@ jobs:
         run: nix flake check --all-systems
 
   # Integration tests - run devenv build on each test project
+  # Tests on Linux (covers Linux + WSL code paths) and macOS
   devenv-integration:
-    name: devenv (${{ matrix.test }})
-    runs-on: ubuntu-latest
+    name: devenv (${{ matrix.test }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     needs: discover-tests
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         test: ${{ fromJson(needs.discover-tests.outputs.tests) }}
     steps:
       - uses: actions/checkout@v4
