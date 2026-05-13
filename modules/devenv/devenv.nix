@@ -17,6 +17,7 @@
 
 {
   imports = [
+    ./lib.nix
     ./chunkhound.nix
     ./claude-git.nix
     ./grepika.nix

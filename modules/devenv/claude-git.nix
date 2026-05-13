@@ -13,11 +13,11 @@
 #     nix-shared.claude-git.enable = true;
 #   }
 #
-# Provides:
-#   - ccommit: Claude-assisted git commit (generates conventional commit message)
-#   - cpr: Claude-assisted PR creation (choose between full or simple)
-#   - cpr-full: Full PR generation
-#   - cpr-simple: Simple PR generation
+# Provides (where prefix = config.nix-shared._internal.prefix):
+#   - <prefix>-commit: Claude-assisted git commit (generates conventional commit message)
+#   - <prefix>-pr: Claude-assisted PR creation (choose between full or simple)
+#   - <prefix>-pr-full: Full PR generation
+#   - <prefix>-pr-simple: Simple PR generation
 #
 # Dependencies:
 #   - claude: Must be in PATH (install via home-manager, brew, npm, etc.)
@@ -32,10 +32,11 @@
 
 let
   cfg = config.nix-shared.claude-git;
+  prefix = config.nix-shared._internal.prefix;
 
   rawOutput = "You are a raw text generator. Output ONLY the content specified by the skill template. Do not add any text before or after. No introductions, no summaries, no questions, no commentary.";
 
-  ccommit = pkgs.writeShellScriptBin "ccommit" ''
+  commitScript = pkgs.writeShellScriptBin "${prefix}-commit" ''
     set -euo pipefail
 
     if ! command -v claude &> /dev/null; then
@@ -52,7 +53,7 @@ let
     git commit -e -m "$(cat "$tmpfile")"
   '';
 
-  create-pr-from-file = pkgs.writeShellScriptBin "create-pr-from-file" ''
+  createPrFromFileScript = pkgs.writeShellScriptBin "${prefix}-create-pr-from-file" ''
     set -euo pipefail
     tmpfile="$1"
     bodyfile=$(mktemp /tmp/cpr-body.XXXXXX.txt)
@@ -68,7 +69,7 @@ let
     fi
   '';
 
-  cpr-full = pkgs.writeShellScriptBin "cpr-full" ''
+  prFullScript = pkgs.writeShellScriptBin "${prefix}-pr-full" ''
     set -euo pipefail
 
     if ! command -v claude &> /dev/null; then
@@ -82,10 +83,10 @@ let
 
     ${pkgs.gum}/bin/gum spin --spinner dot --title "Generating PR description..." -- \
       bash -c 'claude -p "/pr $1" --system-prompt "$2" > "$3"' _ "$*" "${rawOutput}" "$tmpfile"
-    ${create-pr-from-file}/bin/create-pr-from-file "$tmpfile"
+    ${createPrFromFileScript}/bin/${prefix}-create-pr-from-file "$tmpfile"
   '';
 
-  cpr-simple = pkgs.writeShellScriptBin "cpr-simple" ''
+  prSimpleScript = pkgs.writeShellScriptBin "${prefix}-pr-simple" ''
     set -euo pipefail
 
     if ! command -v claude &> /dev/null; then
@@ -99,26 +100,53 @@ let
 
     ${pkgs.gum}/bin/gum spin --spinner dot --title "Generating simple PR description..." -- \
       bash -c 'claude -p "/simple-pr $1" --system-prompt "$2" > "$3"' _ "$*" "${rawOutput}" "$tmpfile"
-    ${create-pr-from-file}/bin/create-pr-from-file "$tmpfile"
+    ${createPrFromFileScript}/bin/${prefix}-create-pr-from-file "$tmpfile"
   '';
 
-  cpr = pkgs.writeShellScriptBin "cpr" ''
+  prScript = pkgs.writeShellScriptBin "${prefix}-pr" ''
     set -euo pipefail
     choice=$(${pkgs.gum}/bin/gum choose "simple-pr" "full-pr")
     case "$choice" in
       full-pr)
-        ${cpr-full}/bin/cpr-full "$@"
+        ${prFullScript}/bin/${prefix}-pr-full "$@"
         ;;
       simple-pr)
-        ${cpr-simple}/bin/cpr-simple "$@"
+        ${prSimpleScript}/bin/${prefix}-pr-simple "$@"
         ;;
     esac
   '';
-  # Paths for template copying
-  templateDir = "${../..}/templates";
-  justfileSrc = "${templateDir}/just/claude-git.just";
-  justfileDest = "$DEVENV_STATE/nix-shared/just/claude-git.just";
-  skillsSrc = "${templateDir}/skills";
+  # Paths
+  stateDir = "$DEVENV_STATE/claude-git";
+  justfileDest = "${stateDir}/claude-git.just";
+  skillsSrc = "${../..}/templates/skills";
+
+  # Generated justfile content
+  justfileContent = ''
+    # Claude Git helpers
+    # Import this in your project's justfile with:
+    #   import? ".devenv/state/claude-git/claude-git.just"
+
+    # Claude-assisted git commit
+    [group('Git')]
+    commit *ARGS:
+        ${prefix}-commit {{ARGS}}
+
+    # Claude-assisted PR creation (interactive choice: simple or full)
+    [group('Git')]
+    pr *ARGS:
+        ${prefix}-pr {{ARGS}}
+
+    # Simple PR generation
+    [group('Git')]
+    simple-pr *ARGS:
+        ${prefix}-pr-simple {{ARGS}}
+
+    # Full PR generation
+    [group('Git')]
+    full-pr *ARGS:
+        ${prefix}-pr-full {{ARGS}}
+  '';
+  justfile = pkgs.writeText "claude-git.just" justfileContent;
 in
 {
   options.nix-shared.claude-git = {
@@ -129,27 +157,27 @@ in
     packages = [
       pkgs.gh
       pkgs.gum
-      ccommit
-      cpr
-      cpr-full
-      cpr-simple
+      commitScript
+      prScript
+      prFullScript
+      prSimpleScript
     ];
 
-    scripts.nix-shared-update-skills.exec = ''
+    scripts."${prefix}-update-skills".exec = ''
       SKILLS_SRC="${skillsSrc}" \
-      SKILLS_DEST="$DEVENV_ROOT/.claude/skills/nix-shared" \
+      SKILLS_DEST="$DEVENV_ROOT/.claude/skills/${prefix}" \
       ${pkgs.python3}/bin/python3 ${../..}/scripts/update_skills.py
     '';
 
     enterShell = ''
       # Copy justfile to devenv state
-      # Import in your justfile with: import? ".devenv/state/nix-shared/just/claude-git.just"
-      mkdir -p "$DEVENV_STATE/nix-shared/just"
-      cp -f "${justfileSrc}" "${justfileDest}"
+      # Import in your justfile with: import? ".devenv/state/claude-git/claude-git.just"
+      mkdir -p "${stateDir}"
+      cp -f "${justfile}" "${justfileDest}"
 
       # Copy skills to project (if project has .claude dir)
       _skills_src="${skillsSrc}"
-      _skills_dest="$DEVENV_ROOT/.claude/skills/nix-shared"
+      _skills_dest="$DEVENV_ROOT/.claude/skills/${prefix}"
 
       if [ -d "$_skills_src" ] && [ -d "$DEVENV_ROOT/.claude" ]; then
         for skill_file in "$_skills_src"/*/SKILL.md; do
@@ -160,8 +188,8 @@ in
         done
       fi
 
-      # Alias for ccommit
-      alias ccm=ccommit
+      # Alias for ${prefix}-commit
+      alias ccm=${prefix}-commit
     '';
   };
 }
