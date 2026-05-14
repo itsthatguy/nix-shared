@@ -11,8 +11,8 @@
 # Usage in devenv.nix:
 #   {
 #     nix-shared.claude-git.enable = true;
-#     nix-shared.grepika.enable = true;
 #     nix-shared.chunkhound.enable = true;
+#     nix-shared.grepika.enable = true;
 #   }
 
 {

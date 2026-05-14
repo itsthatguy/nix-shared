@@ -10,5 +10,8 @@
     just
   ];
 
-  nix-shared.claude-git.enable = true;
+  nix-shared = {
+    claude-git.enable = true;
+    grepika.enable = true;
+  };
 }

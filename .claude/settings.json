@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "grepika@agentika-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "agentika-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "agentika-labs/agentika-plugin-marketplace"
+      }
+    }
+  }
+}
