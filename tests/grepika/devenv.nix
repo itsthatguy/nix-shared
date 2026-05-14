@@ -8,8 +8,8 @@ in
   packages = [ stubs.claude ];
 
   enterTest = ''
-    echo "Testing grepika module loads and task is defined..."
-    devenv tasks list | grep -q "grepika:setup"
-    echo "✓ grepika:setup task exists"
+    echo "Testing grepika module loads and setup task is defined..."
+    devenv tasks list | grep -q "nix-shared:setup"
+    echo "✓ nix-shared:setup task exists"
   '';
 }

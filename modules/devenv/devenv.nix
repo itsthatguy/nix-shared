@@ -18,6 +18,7 @@
 
 {
   imports = [
+    ./setup.nix
     ./chrome-devtools.nix
     ./chunkhound.nix
     ./claude-git.nix

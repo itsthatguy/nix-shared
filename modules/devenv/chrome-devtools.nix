@@ -33,18 +33,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    tasks = {
-      "chrome-devtools:setup" = {
-        exec = ''
-          if ! claude plugin list 2>/dev/null | grep -q "${pluginId}"; then
-            echo "Installing chrome-devtools Claude Code plugin..."
-            claude plugin install ${pluginId} --scope project 2>/dev/null || true
-          fi
-          mkdir -p "${stateDir}/plugins"
-          touch "${stateDir}/plugins/${pluginId}"
-        '';
-        before = [ "devenv:enterShell" ];
-      };
-    };
+    nix-shared.plugins.setupScripts = [
+      ''
+        echo "Ensuring chrome-devtools Claude Code plugin..."
+        claude plugin install ${pluginId} --scope project 2>/dev/null || true
+        mkdir -p "${stateDir}/plugins"
+        touch "${stateDir}/plugins/${pluginId}"
+      ''
+    ];
   };
 }
