@@ -34,23 +34,19 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    tasks = {
-      "grepika:setup" = {
-        exec = ''
-          if ! claude plugin list 2>/dev/null | grep -q "${pluginId}"; then
-            echo "Installing grepika Claude Code plugin..."
-            repo="agentika-labs/agentika-plugin-marketplace"
+    nix-shared.plugins.setupScripts = [
+      ''
+        echo "Ensuring grepika Claude Code plugin..."
+        repo="agentika-labs/agentika-plugin-marketplace"
 
-            claude plugin marketplace add "$repo" --scope project 2>/dev/null || true
-            claude plugin marketplace update "${marketplace}" 2>/dev/null || true
-            claude plugin install "${pluginId}" --scope project 2>/dev/null || true
-          fi
-          mkdir -p "${stateDir}/plugins" "${stateDir}/marketplaces"
-          touch "${stateDir}/plugins/${pluginId}"
-          touch "${stateDir}/marketplaces/${marketplace}"
-        '';
-        before = [ "devenv:enterShell" ];
-      };
-    };
+        claude plugin marketplace add "$repo" --scope project 2>/dev/null || true
+        claude plugin marketplace update "${marketplace}" 2>/dev/null || true
+        claude plugin install "${pluginId}" --scope project 2>/dev/null || true
+
+        mkdir -p "${stateDir}/plugins" "${stateDir}/marketplaces"
+        touch "${stateDir}/plugins/${pluginId}"
+        touch "${stateDir}/marketplaces/${marketplace}"
+      ''
+    ];
   };
 }

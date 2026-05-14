@@ -8,8 +8,8 @@ in
   packages = [ stubs.claude ];
 
   enterTest = ''
-    echo "Testing chrome-devtools module loads and task is defined..."
-    devenv tasks list | grep -q "chrome-devtools:setup"
-    echo "✓ chrome-devtools:setup task exists"
+    echo "Testing chrome-devtools module loads and setup task is defined..."
+    devenv tasks list | grep -q "nix-shared:setup"
+    echo "✓ nix-shared:setup task exists"
   '';
 }
