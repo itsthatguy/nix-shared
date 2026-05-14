@@ -14,7 +14,7 @@ jobs:
     outputs:
       tests: ${{ steps.find.outputs.tests }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: find
         run: echo "tests=$(ls -d tests/*/ | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
 
@@ -23,7 +23,7 @@ jobs:
     name: nix flake check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: cachix/install-nix-action@v30
         with:
@@ -45,7 +45,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         test: ${{ fromJson(needs.discover-tests.outputs.tests) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: cachix/install-nix-action@v30
         with:
