@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-[[ "$*" == *"ollama"* ]] && echo "1" && exit 0
-/usr/bin/pgrep "$@"

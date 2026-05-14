@@ -14,5 +14,5 @@ in
   nix-shared.chunkhound.enable = true;
   nix-shared.grepika.enable = true;
 
-  packages = [ stubs.claude ];
+  packages = [ stubs.claude stubs.ollama stubs.pgrep ];
 }
