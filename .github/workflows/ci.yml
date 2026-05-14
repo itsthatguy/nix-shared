@@ -7,17 +7,6 @@ on:
     branches: ['main']
 
 jobs:
-  # Discover test directories for matrix
-  discover-tests:
-    name: discover tests
-    runs-on: ubuntu-latest
-    outputs:
-      tests: ${{ steps.find.outputs.tests }}
-    steps:
-      - uses: actions/checkout@v5
-      - id: find
-        run: echo "tests=$(ls -d tests/*/ | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')" >> $GITHUB_OUTPUT
-
   # Verify the flake evaluates cleanly
   flake-check:
     name: nix flake check
@@ -34,16 +23,15 @@ jobs:
       - name: Check flake
         run: nix flake check --all-systems
 
-  # Integration tests - run devenv build on each test project
-  # Tests on Linux (covers Linux + WSL code paths) and macOS
+  # Integration test - runs on both OSes to catch platform-specific issues.
+  # The default test enables all modules (chrome-devtools, claude-git, chunkhound, grepika).
+  # Individual module tests remain in tests/ for local debugging but don't run in CI.
   devenv-integration:
-    name: devenv (${{ matrix.test }}, ${{ matrix.os }})
+    name: devenv (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: discover-tests
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        test: ${{ fromJson(needs.discover-tests.outputs.tests) }}
     steps:
       - uses: actions/checkout@v5
 
@@ -61,4 +49,4 @@ jobs:
         run: nix profile install nixpkgs#devenv
 
       - name: Run integration test
-        run: cd tests/${{ matrix.test }} && devenv test
+        run: cd tests/default && devenv test
