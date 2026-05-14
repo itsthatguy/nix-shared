@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.1.0 (2026-05-14)
+
+### Features
+- add plugin cleanup with state tracking
+- add chrome-devtools Claude Code plugin module
+
+### Refactoring
+- simplify test matrix to single integration test
+- consolidate ollama stubs into tests/lib/stubs.nix
+- use Claude Code plugin with devenv task
+
+
 ## v2.0.2 (2026-05-12)
 
 ### Fixes
