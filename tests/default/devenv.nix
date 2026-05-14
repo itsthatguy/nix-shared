@@ -10,6 +10,7 @@ let
 in
 {
   # Test bundled module import - all modules available via single import
+  nix-shared.chrome-devtools.enable = true;
   nix-shared.claude-git.enable = true;
   nix-shared.chunkhound.enable = true;
   nix-shared.grepika.enable = true;
