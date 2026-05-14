@@ -11,52 +11,42 @@
 # Usage in devenv.nix:
 #   {
 #     nix-shared.grepika.enable = true;
-#
-#     # Optional overrides:
-#     # nix-shared.grepika.root = ".";  # defaults to $DEVENV_ROOT
 #   }
 #
-# Provides:
-#   - grepika command (wraps grepika with --db pointing to devenv state)
+# On shell entry, installs the grepika Claude Code plugin at project scope.
+# The plugin config is written to .claude/settings.json (shareable via git).
 
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
   cfg = config.nix-shared.grepika;
-
-  grepikaDb = "$DEVENV_STATE/grepika.db";
 in
 {
   options.nix-shared.grepika = {
-    enable = lib.mkEnableOption "Grepika code search";
-
-    root = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "Root directory to search (defaults to $DEVENV_ROOT if empty)";
-    };
+    enable = lib.mkEnableOption "Grepika Claude Code plugin";
   };
 
   config = lib.mkIf cfg.enable {
-    packages = [
-      pkgs.nodejs
-    ];
+    tasks = {
+      "grepika:setup" = {
+        exec = ''
+          if ! claude plugin list 2>/dev/null | grep -q "grepika@agentika-marketplace"; then
+            echo "Installing grepika Claude Code plugin..."
+            repo="agentika-labs/agentika-plugin-marketplace"
+            marketplace="agentika-marketplace"
+            plugin="grepika@''${marketplace}"
 
-    scripts.grepika.exec = ''
-      root_arg=""
-      if [ -n "${cfg.root}" ]; then
-        root_arg="--root ${cfg.root}"
-      else
-        root_arg="--root $DEVENV_ROOT"
-      fi
-
-      npx -y @agentika/grepika --db "${grepikaDb}" $root_arg "$@"
-    '';
-
+            claude plugin marketplace add "$repo" --scope project 2>/dev/null || true
+            claude plugin marketplace update "$marketplace" 2>/dev/null || true
+            claude plugin install "$plugin" --scope project 2>/dev/null || true
+          fi
+        '';
+        before = [ "devenv:enterShell" ];
+      };
+    };
   };
 }
