@@ -13,6 +13,7 @@
 
     devenvModules = {
       default = ./modules/devenv;
+      chrome-devtools = ./modules/devenv/chrome-devtools.nix;
       chunkhound = ./modules/devenv/chunkhound.nix;
       claude-git = ./modules/devenv/claude-git.nix;
       grepika = ./modules/devenv/grepika.nix;
