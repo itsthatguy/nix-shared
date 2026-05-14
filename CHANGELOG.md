@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.1 (2026-05-14)
+
+### Features
+- run plugin setup scripts sequentially
+
+
 ## v2.1.0 (2026-05-14)
 
 ### Features
