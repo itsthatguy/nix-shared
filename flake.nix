@@ -16,6 +16,7 @@
       chrome-devtools = ./modules/devenv/chrome-devtools.nix;
       chunkhound = ./modules/devenv/chunkhound.nix;
       claude-git = ./modules/devenv/claude-git.nix;
+      cleanup = ./modules/devenv/cleanup.nix;
       grepika = ./modules/devenv/grepika.nix;
     };
   };

@@ -24,6 +24,8 @@
 
 let
   cfg = config.nix-shared.chrome-devtools;
+  stateDir = ".devenv/state/nix-shared";
+  pluginId = "chrome-devtools-mcp@claude-plugins-official";
 in
 {
   options.nix-shared.chrome-devtools = {
@@ -34,10 +36,12 @@ in
     tasks = {
       "chrome-devtools:setup" = {
         exec = ''
-          if ! claude plugin list 2>/dev/null | grep -q "chrome-devtools-mcp@claude-plugins-official"; then
+          if ! claude plugin list 2>/dev/null | grep -q "${pluginId}"; then
             echo "Installing chrome-devtools Claude Code plugin..."
-            claude plugin install chrome-devtools-mcp@claude-plugins-official --scope project 2>/dev/null || true
+            claude plugin install ${pluginId} --scope project 2>/dev/null || true
           fi
+          mkdir -p "${stateDir}/plugins"
+          touch "${stateDir}/plugins/${pluginId}"
         '';
         before = [ "devenv:enterShell" ];
       };
