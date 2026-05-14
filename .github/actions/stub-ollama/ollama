@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-case "$1" in
-  serve) sleep infinity ;;
-  list) printf "NAME                       ID              SIZE      MODIFIED\nnomic-embed-text:latest    0a109f422b47    274 MB    1 hour ago\n" ;;
-  pull) echo "Already up to date" ;;
-  *) exit 0 ;;
-esac

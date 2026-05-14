@@ -60,7 +60,5 @@ jobs:
       - name: Install devenv
         run: nix profile install nixpkgs#devenv
 
-      - uses: ./.github/actions/stub-ollama
-
       - name: Run integration test
         run: cd tests/${{ matrix.test }} && devenv test
