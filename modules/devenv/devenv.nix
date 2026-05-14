@@ -21,6 +21,7 @@
     ./chrome-devtools.nix
     ./chunkhound.nix
     ./claude-git.nix
+    ./cleanup.nix
     ./grepika.nix
   ];
 }

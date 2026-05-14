@@ -24,6 +24,9 @@
 
 let
   cfg = config.nix-shared.grepika;
+  stateDir = ".devenv/state/nix-shared";
+  marketplace = "agentika-marketplace";
+  pluginId = "grepika@${marketplace}";
 in
 {
   options.nix-shared.grepika = {
@@ -34,16 +37,17 @@ in
     tasks = {
       "grepika:setup" = {
         exec = ''
-          if ! claude plugin list 2>/dev/null | grep -q "grepika@agentika-marketplace"; then
+          if ! claude plugin list 2>/dev/null | grep -q "${pluginId}"; then
             echo "Installing grepika Claude Code plugin..."
             repo="agentika-labs/agentika-plugin-marketplace"
-            marketplace="agentika-marketplace"
-            plugin="grepika@''${marketplace}"
 
             claude plugin marketplace add "$repo" --scope project 2>/dev/null || true
-            claude plugin marketplace update "$marketplace" 2>/dev/null || true
-            claude plugin install "$plugin" --scope project 2>/dev/null || true
+            claude plugin marketplace update "${marketplace}" 2>/dev/null || true
+            claude plugin install "${pluginId}" --scope project 2>/dev/null || true
           fi
+          mkdir -p "${stateDir}/plugins" "${stateDir}/marketplaces"
+          touch "${stateDir}/plugins/${pluginId}"
+          touch "${stateDir}/marketplaces/${marketplace}"
         '';
         before = [ "devenv:enterShell" ];
       };
